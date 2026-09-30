@@ -21,6 +21,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
+      - run: python -m pip install -e "examples/integration_demo[test]"
       - run: ruff check .
       - run: python -m pytest
+      - run: python -m citruscare_integration_demo
+      - run: python -m pytest examples/integration_demo/tests
       - run: pip-audit .

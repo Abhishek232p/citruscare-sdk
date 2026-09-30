@@ -12,6 +12,24 @@ python -m pip install -e ".[dev]"
 
 No network provider or API key is needed to run unit tests.
 
+## Consumer integration demo
+
+The integration demo is a separately packaged consumer in
+`examples/integration_demo`. From the repository root, install the SDK from
+this checkout, install the consumer, then run its end-to-end flow and tests:
+
+```powershell
+Set-Location examples\integration_demo
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ..\..
+.\.venv\Scripts\python.exe -m pip install -e ".[test]"
+.\.venv\Scripts\python.exe -m citruscare_integration_demo
+.\.venv\Scripts\python.exe -m pytest
+```
+
+See [the consumer guide](../examples/integration_demo/README.md) for output
+interpretation and installation commands for other applications.
+
 ## Checks
 
 ```powershell

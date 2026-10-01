@@ -23,9 +23,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(settings.max_turns, 4)
 
     def test_invalid_numeric_environment_value_is_explicit(self) -> None:
-        with patch.dict(
-            os.environ, {"CITRUSCARE_MAX_TURNS": "many"}, clear=True
-        ):
+        with patch.dict(os.environ, {"CITRUSCARE_MAX_TURNS": "many"}, clear=True):
             with self.assertRaises(ConfigurationError):
                 Settings.from_env()
 
@@ -36,6 +34,15 @@ class ConfigurationTests(unittest.TestCase):
     def test_empty_model_is_not_reported_as_a_numeric_parse_error(self) -> None:
         with patch.dict(os.environ, {"CITRUSCARE_MODEL": ""}, clear=True):
             with self.assertRaisesRegex(ConfigurationError, "model must not be empty"):
+                Settings.from_env()
+
+    def test_invalid_model_discovery_ttl_is_a_configuration_error(self) -> None:
+        with patch.dict(
+            os.environ,
+            {"CITRUSCARE_MODEL_DISCOVERY_TTL_SECONDS": "not-a-number"},
+            clear=True,
+        ):
+            with self.assertRaises(ConfigurationError):
                 Settings.from_env()
 
 

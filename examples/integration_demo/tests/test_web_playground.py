@@ -27,9 +27,7 @@ class PlaygroundServerTests(unittest.TestCase):
             html = response.read().decode("utf-8")
             self.assertEqual(response.status, 200)
             self.assertIn("CitrusCare SDK Playground", html)
-            self.assertEqual(
-                response.headers["X-Content-Type-Options"], "nosniff"
-            )
+            self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
             self.assertEqual(response.headers["X-Frame-Options"], "DENY")
             self.assertIn(
                 "default-src 'self'",

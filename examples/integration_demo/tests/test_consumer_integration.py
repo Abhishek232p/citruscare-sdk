@@ -36,14 +36,14 @@ class ConsumerIntegrationTests(unittest.TestCase):
     def test_sdk_distribution_is_installed_for_consumer(self) -> None:
         self.assertEqual(
             importlib.metadata.version("citruscare-sdk"),
-            "0.1.0",
+            "0.2.0",
         )
 
     def test_demo_exercises_installed_sdk_capabilities(self) -> None:
         output = run_demo()
         self.assertEqual(
             output["package"],
-            {"distribution": "citruscare-sdk", "version": "0.1.0"},
+            {"distribution": "citruscare-sdk", "version": "0.2.0"},
         )
         self.assertEqual(
             output["agent"]["content"], "Reference DEMO-REF-001 is active."
@@ -78,8 +78,10 @@ class ConsumerIntegrationTests(unittest.TestCase):
                 "unknown_tool",
             },
         )
-        self.assertEqual(output["handled_errors"]["provider_http_error"],
-                         "Provider returned HTTP 503")
+        self.assertEqual(
+            output["handled_errors"]["provider_http_error"],
+            "Provider returned HTTP 503",
+        )
 
     def test_public_api_can_be_used_from_consumer_application(self) -> None:
         self.assertTrue(issubclass(ConfigurationError, Exception))
@@ -88,9 +90,7 @@ class ConsumerIntegrationTests(unittest.TestCase):
         self.assertTrue(issubclass(StepLimitExceeded, Exception))
         self.assertIsInstance(AuditEvent.create("consumer_test"), AuditEvent)
         self.assertTrue(callable(AuditSink.record))
-        self.assertIsInstance(
-            ConsentGrant("s", "p", datetime.now(UTC)), ConsentGrant
-        )
+        self.assertIsInstance(ConsentGrant("s", "p", datetime.now(UTC)), ConsentGrant)
         self.assertIsInstance(Message("user", "consumer request"), Message)
         self.assertIsInstance(
             AgentResult("done", 1, (Message("assistant", "done"),)), AgentResult
@@ -109,9 +109,7 @@ class ConsumerIntegrationTests(unittest.TestCase):
         audit = MemoryAuditSink()
         result = asyncio.run(
             Agent(
-                ScriptedProvider(
-                    [AssistantTurn(content="Consumer flow complete.")]
-                ),
+                ScriptedProvider([AssistantTurn(content="Consumer flow complete.")]),
                 ToolRegistry(),
                 audit_sink=audit,
             ).run("synthetic test request")

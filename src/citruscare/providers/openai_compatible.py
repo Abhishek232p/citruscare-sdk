@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
@@ -23,6 +24,13 @@ class AsyncTransport(Protocol):
         timeout: float,
     ) -> tuple[int, Mapping[str, Any]]: ...
 
+    async def get_json(
+        self,
+        url: str,
+        headers: Mapping[str, str],
+        timeout: float,
+    ) -> tuple[int, Mapping[str, Any]]: ...
+
 
 class UrllibTransport:
     async def post(
@@ -32,9 +40,36 @@ class UrllibTransport:
         payload: Mapping[str, Any],
         timeout: float,
     ) -> tuple[int, Mapping[str, Any]]:
-        return await asyncio.to_thread(
-            self._post_sync, url, headers, payload, timeout
-        )
+        return await asyncio.to_thread(self._post_sync, url, headers, payload, timeout)
+
+    async def get_json(
+        self,
+        url: str,
+        headers: Mapping[str, str],
+        timeout: float,
+    ) -> tuple[int, Mapping[str, Any]]:
+        return await asyncio.to_thread(self._get_sync, url, headers, timeout)
+
+    @staticmethod
+    def _get_sync(
+        url: str,
+        headers: Mapping[str, str],
+        timeout: float,
+    ) -> tuple[int, Mapping[str, Any]]:
+        request = Request(url, headers=dict(headers), method="GET")
+        try:
+            with urlopen(request, timeout=timeout) as response:
+                body = response.read()
+                status = response.status
+        except HTTPError as exc:
+            raise _http_provider_error(exc.code) from exc
+        except (URLError, TimeoutError, OSError) as exc:
+            raise ProviderError(
+                "Provider request failed",
+                code="LLM_PROVIDER_UNAVAILABLE",
+                retryable=True,
+            ) from exc
+        return _parse_json_object(body, status)
 
     @staticmethod
     def _post_sync(
@@ -54,18 +89,47 @@ class UrllibTransport:
                 body = response.read()
                 status = response.status
         except HTTPError as exc:
-            raise ProviderError(
-                f"Provider returned HTTP {exc.code}"
-            ) from exc
+            raise _http_provider_error(exc.code) from exc
         except (URLError, TimeoutError, OSError) as exc:
-            raise ProviderError("Provider request failed") from exc
-        try:
-            parsed = json.loads(body)
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ProviderError("Provider returned invalid JSON") from exc
-        if not isinstance(parsed, dict):
-            raise ProviderError("Provider response must be a JSON object")
-        return status, parsed
+            raise ProviderError(
+                "Provider request failed",
+                code="LLM_PROVIDER_UNAVAILABLE",
+                retryable=True,
+            ) from exc
+        return _parse_json_object(body, status)
+
+
+def _http_provider_error(status: int) -> ProviderError:
+    code_by_status = {
+        400: "LLM_PROVIDER_INVALID_REQUEST",
+        401: "LLM_PROVIDER_AUTH_FAILED",
+        403: "LLM_PROVIDER_PERMISSION_DENIED",
+        404: "LLM_MODEL_NOT_FOUND",
+        408: "LLM_PROVIDER_TIMEOUT",
+        429: "LLM_PROVIDER_RATE_LIMITED",
+    }
+    return ProviderError(
+        f"Provider returned HTTP {status}",
+        code=code_by_status.get(status, "LLM_PROVIDER_UNAVAILABLE"),
+        retryable=status in {408, 429, 500, 502, 503, 504},
+        status_code=status,
+    )
+
+
+def _parse_json_object(body: bytes, status: int) -> tuple[int, Mapping[str, Any]]:
+    try:
+        parsed = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ProviderError(
+            "Provider returned invalid JSON",
+            code="LLM_PROVIDER_INVALID_RESPONSE",
+        ) from exc
+    if not isinstance(parsed, dict):
+        raise ProviderError(
+            "Provider response must be a JSON object",
+            code="LLM_PROVIDER_INVALID_RESPONSE",
+        )
+    return status, parsed
 
 
 class OpenAICompatibleProvider:
@@ -75,48 +139,88 @@ class OpenAICompatibleProvider:
         self,
         settings: Settings,
         transport: AsyncTransport | None = None,
+        *,
+        include_message_names: bool = True,
     ) -> None:
         if not settings.api_key:
-            raise ConfigurationError(
-                "CITRUSCARE_API_KEY is required for this provider"
-            )
+            raise ConfigurationError("Provider API credentials are required")
         self.settings = settings
         self.transport = transport or UrllibTransport()
+        self.include_message_names = include_message_names
 
     async def complete(
         self,
         messages: Sequence[Message],
         tools: Sequence[Mapping[str, Any]],
     ) -> AssistantTurn:
+        turn, _ = await self.complete_with_metadata(messages, tools)
+        return turn
+
+    async def complete_with_metadata(
+        self,
+        messages: Sequence[Message],
+        tools: Sequence[Mapping[str, Any]],
+        *,
+        request_id: str | None = None,
+        structured: bool = False,
+    ) -> tuple[AssistantTurn, Mapping[str, Any]]:
         payload: dict[str, Any] = {
             "model": self.settings.model,
-            "messages": [self._serialize_message(message) for message in messages],
+            "messages": [
+                self._serialize_message(
+                    message, include_name=self.include_message_names
+                )
+                for message in messages
+            ],
         }
         if tools:
             payload["tools"] = list(tools)
             payload["tool_choice"] = "auto"
+        if structured:
+            payload["response_format"] = {"type": "json_object"}
+        headers = {
+            "Authorization": f"Bearer {self.settings.api_key}",
+            "Content-Type": "application/json",
+        }
+        if request_id:
+            headers["X-Request-ID"] = request_id
+        started = time.perf_counter()
         status, response = await self.transport.post(
             f"{self.settings.base_url.rstrip('/')}/chat/completions",
-            {
-                "Authorization": f"Bearer {self.settings.api_key}",
-                "Content-Type": "application/json",
-            },
+            headers,
             payload,
             self.settings.request_timeout,
         )
         if status < 200 or status >= 300:
-            raise ProviderError(f"Provider returned HTTP {status}")
-        return self._parse_response(response)
+            raise _http_provider_error(status)
+        turn = self._parse_response(response)
+        raw_usage = response.get("usage", {})
+        usage = raw_usage if isinstance(raw_usage, Mapping) else {}
+        metadata = {
+            "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+            "request_id": request_id,
+            "usage": {
+                key: usage[key]
+                for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+                if isinstance(usage.get(key), int) and usage[key] >= 0
+            },
+            "provider_request_id": response.get("id")
+            if isinstance(response.get("id"), str)
+            else None,
+        }
+        return turn, metadata
 
     @staticmethod
-    def _serialize_message(message: Message) -> dict[str, Any]:
+    def _serialize_message(
+        message: Message, *, include_name: bool = True
+    ) -> dict[str, Any]:
         serialized: dict[str, Any] = {
             "role": message.role,
             "content": message.content,
         }
         if message.tool_call_id:
             serialized["tool_call_id"] = message.tool_call_id
-        if message.name:
+        if include_name and message.name:
             serialized["name"] = message.name
         if message.tool_calls:
             serialized["tool_calls"] = [

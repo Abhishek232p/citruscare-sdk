@@ -117,11 +117,7 @@ class _ProtocolEndpoint(BaseHTTPRequestHandler):
             self.send_error(400)
             return
         body = json.dumps(
-            {
-                "choices": [
-                    {"message": {"content": _LOCAL_COMPLETION, "tool_calls": []}}
-                ]
-            }
+            {"choices": [{"message": {"content": _LOCAL_COMPLETION, "tool_calls": []}}]}
         ).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -260,9 +256,7 @@ async def _run_demo_async() -> dict[str, Any]:
     except StepLimitExceeded as exc:
         errors["turn_limit"] = str(exc)
     try:
-        await registry.invoke(
-            ToolCall("unknown-call", "not_registered", arguments={})
-        )
+        await registry.invoke(ToolCall("unknown-call", "not_registered", arguments={}))
     except ToolExecutionError as exc:
         errors["unknown_tool"] = str(exc)
 

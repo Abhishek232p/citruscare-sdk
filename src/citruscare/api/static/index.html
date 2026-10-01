@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f8f5">
+    <title>CitrusCare Intelligence Engine</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a class="brand" href="/"><span class="brand-mark">C</span><span>CitrusCare<small>INTELLIGENCE ENGINE</small></span></a>
+        <nav aria-label="Main navigation">
+          <a href="/playground">Playground</a>
+          <a href="/agents">Agents</a>
+          <a href="/knowledge">Knowledge</a>
+          <a href="/evidence">Evidence</a>
+          <a href="/tools">Tools</a>
+          <a href="/audit">Audit</a>
+          <a href="/health">Health</a>
+        </nav>
+        <div class="sidebar-note">Local demonstration<br>In-memory data only</div>
+      </aside>
+      <main>
+        <header class="topbar"><span>DEVELOPER CONSOLE</span><span class="status-pill"><i></i> API connected</span></header>
+        <section class="intro">
+          <p class="eyebrow">CITRUSCARE · LOCAL ENGINE</p>
+          <h1 id="page-title">Intelligence playground</h1>
+          <p id="page-subtitle">Explore the real API-to-SDK flow using synthetic fixtures.</p>
+        </section>
+        <div class="warning" role="note"><strong>SYNTHETIC DEMO DATA</strong><span>Not for clinical use. No real patient data, diagnosis, prescribing, or treatment decisions.</span></div>
+        <section class="workspace">
+          <div class="panel" id="control-panel"></div>
+          <div class="panel output-panel">
+            <div class="panel-heading"><div><p class="eyebrow">LIVE RESPONSE</p><h2 id="output-title">Ready when you are</h2></div><span id="latency" class="latency"></span></div>
+            <div id="output" class="output" aria-live="polite"><p>Run an operation to see its actual API response, provenance, and safety metadata.</p></div>
+          </div>
+        </section>
+        <footer>CitrusCare SDK · informational demo · <a href="/docs">API reference</a></footer>
+      </main>
+    </div>
+  </body>
+</html>

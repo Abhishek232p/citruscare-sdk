@@ -27,9 +27,10 @@ resource or a claim of clinical suitability.
 
 ## Deliberately out of scope
 
-This initial implementation does not include patient/provider identity
-management, authentication/token issuance, medication decision support,
-diagnostics, pharmacy workflows, care journeys, persistent databases, MCP,
-streaming, or a REST server. Those domains require separate product, safety,
-security, and interoperability requirements and are not represented by empty
-placeholder packages.
+The informational Intelligence Engine adds a local FastAPI endpoint and
+browser playground; these are a synthetic-data demo, not a production REST
+service. Patient/provider identity management, authentication/token issuance,
+medication decision support, diagnostics, pharmacy workflows, care journeys,
+persistent databases, and MCP remain out of scope. See the detailed
+[engine architecture](architecture/intelligence-engine.md) and
+[security limitations](security/security.md).

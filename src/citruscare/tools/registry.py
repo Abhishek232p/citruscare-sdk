@@ -7,6 +7,7 @@ import json
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from citruscare.core.errors import ToolExecutionError
@@ -30,6 +31,8 @@ class Tool:
     description: str
     parameters: Mapping[str, Any]
     handler: ToolHandler
+    required_permissions: frozenset[str] = frozenset()
+    risk_level: str = "low"
 
     def __post_init__(self) -> None:
         if not _NAME_PATTERN.fullmatch(self.name):
@@ -50,8 +53,7 @@ class Tool:
         ):
             raise ValueError("tool property schemas must be objects with string names")
         if any(
-            schema.get("type") is not None
-            and schema.get("type") not in _JSON_TYPES
+            schema.get("type") is not None and schema.get("type") not in _JSON_TYPES
             for schema in properties.values()
         ):
             raise ValueError("tool properties use an unsupported JSON type")
@@ -59,11 +61,14 @@ class Tool:
             raise ValueError("required tool argument names must be strings")
         if any(key not in properties for key in required):
             raise ValueError("required tool arguments must be declared in properties")
+        if self.risk_level not in {"low", "moderate", "high"}:
+            raise ValueError("risk_level must be low, moderate, or high")
 
 
 class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, Tool] = {}
+        self.history: list[ToolExecutionRecord] = []
 
     def register(self, tool: Tool) -> None:
         if tool.name in self._tools:
@@ -83,20 +88,56 @@ class ToolRegistry:
             for tool in self._tools.values()
         ]
 
-    async def invoke(self, call: ToolCall) -> Any:
+    def describe(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": dict(tool.parameters),
+                "required_permissions": sorted(tool.required_permissions),
+                "risk_level": tool.risk_level,
+            }
+            for tool in self._tools.values()
+        ]
+
+    async def invoke(
+        self,
+        call: ToolCall,
+        *,
+        permissions: frozenset[str] = frozenset(),
+    ) -> Any:
         tool = self._tools.get(call.name)
         if tool is None:
+            self.history.append(
+                ToolExecutionRecord(call.name, False, "unknown_tool", datetime.now(UTC))
+            )
             raise ToolExecutionError(f"Unknown tool '{call.name}'")
+        missing_permissions = tool.required_permissions - permissions
+        if missing_permissions:
+            self.history.append(
+                ToolExecutionRecord(
+                    call.name, False, "permission_denied", datetime.now(UTC)
+                )
+            )
+            raise ToolExecutionError(f"Permission denied for tool '{call.name}'")
         self._validate_arguments(tool, call.arguments)
         try:
             result = tool.handler(**call.arguments)
             if inspect.isawaitable(result):
                 result = await result
             json.dumps(result)
+            self.history.append(
+                ToolExecutionRecord(call.name, True, "success", datetime.now(UTC))
+            )
             return result
         except ToolExecutionError:
             raise
         except Exception as exc:
+            self.history.append(
+                ToolExecutionRecord(
+                    call.name, False, type(exc).__name__, datetime.now(UTC)
+                )
+            )
             raise ToolExecutionError(
                 f"Tool '{tool.name}' failed ({type(exc).__name__})"
             ) from exc
@@ -104,9 +145,7 @@ class ToolRegistry:
     @staticmethod
     def _validate_arguments(tool: Tool, arguments: Mapping[str, Any]) -> None:
         if not isinstance(arguments, Mapping):
-            raise ToolExecutionError(
-                f"Tool '{tool.name}' arguments must be an object"
-            )
+            raise ToolExecutionError(f"Tool '{tool.name}' arguments must be an object")
         properties = tool.parameters.get("properties", {})
         required = tool.parameters.get("required", [])
         missing = [key for key in required if key not in arguments]
@@ -136,3 +175,11 @@ class ToolRegistry:
                 raise ToolExecutionError(
                     f"Tool '{tool.name}' argument '{key}' must be {expected_type}"
                 )
+
+
+@dataclass(frozen=True, slots=True)
+class ToolExecutionRecord:
+    tool_name: str
+    success: bool
+    result_type: str
+    occurred_at: datetime

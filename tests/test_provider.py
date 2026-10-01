@@ -17,9 +17,9 @@ class FakeTransport:
     def __init__(self, status: int, response: Mapping[str, Any]) -> None:
         self.status = status
         self.response = response
-        self.request: (
-            tuple[str, Mapping[str, str], Mapping[str, Any], float] | None
-        ) = None
+        self.request: tuple[str, Mapping[str, str], Mapping[str, Any], float] | None = (
+            None
+        )
 
     async def post(
         self,
@@ -40,12 +40,13 @@ class ProviderTests(unittest.IsolatedAsyncioTestCase):
         provider = OpenAICompatibleProvider(
             Settings(api_key="secret", model="test-model"), transport
         )
-        result = await provider.complete([Message("user", "Hi")], [])
+        result = await provider.complete([Message("user", "Hi", name="client")], [])
         self.assertEqual(result.content, "Hello")
-        self.assertEqual(transport.request[0], "https://api.openai.com/v1/chat/completions")
         self.assertEqual(
-            transport.request[1]["Authorization"], "Bearer secret"
+            transport.request[0], "https://api.openai.com/v1/chat/completions"
         )
+        self.assertEqual(transport.request[1]["Authorization"], "Bearer secret")
+        self.assertEqual(transport.request[2]["messages"][0]["name"], "client")
         self.assertNotIn("tools", transport.request[2])
 
     async def test_parses_tool_calls(self) -> None:

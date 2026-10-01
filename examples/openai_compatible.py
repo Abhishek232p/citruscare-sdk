@@ -11,9 +11,7 @@ async def main() -> None:
     if not os.getenv("CITRUSCARE_API_KEY"):
         raise SystemExit("Set CITRUSCARE_API_KEY before running this example.")
     provider = OpenAICompatibleProvider(Settings.from_env())
-    result = await Agent(provider, ToolRegistry()).run(
-        "Reply with a brief greeting."
-    )
+    result = await Agent(provider, ToolRegistry()).run("Reply with a brief greeting.")
     print(result.content)
 
 

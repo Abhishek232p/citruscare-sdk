@@ -76,6 +76,7 @@ python examples\basic_agent.py
 For a separate consumer application that installs the local package, exercises
 the implemented public API, and tests the real HTTP adapter over loopback, see
 [the integration demo](examples/integration_demo/README.md).
+The same consumer includes a loopback-only [SDK developer playground](examples/integration_demo/README.md#run-on-windows-powershell).
 
 ## Connecting an OpenAI-compatible endpoint
 

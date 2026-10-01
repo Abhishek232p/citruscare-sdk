@@ -32,6 +32,18 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
+Launch the local developer playground after installing the consumer above:
+
+```powershell
+.\.venv\Scripts\python.exe -m citruscare_integration_demo.web --host 127.0.0.1 --port 8765
+```
+
+Then open <http://127.0.0.1:8765/>. Keep the terminal open while using the
+playground and press `Ctrl+C` to stop it. The server refuses non-loopback
+addresses, accepts no user-provided demo payloads, and uses synthetic values.
+It is a local developer tool, not an internet-facing website or production
+patient application.
+
 The first editable install installs the SDK itself from this repository. The
 second installs this consumer app and its test dependency. The SDK has no
 runtime third-party dependencies.

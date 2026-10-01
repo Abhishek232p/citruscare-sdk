@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f7f2">
+    <meta name="description" content="A local, synthetic-data playground for the CitrusCare Python SDK.">
+    <title>CitrusCare SDK Playground</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CitrusCare SDK playground home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>CitrusCare <span class="brand-light">SDK</span></span>
+      </a>
+      <div class="topbar-right">
+        <span class="local-badge"><span class="status-dot"></span>LOCAL PLAYGROUND</span>
+        <a class="source-link" href="https://github.com/Abhishek232p/citruscare-sdk" rel="noreferrer">Repository ↗</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-line"></span>DEVELOPER WORKSPACE</p>
+          <h1>Build with care.<br><span>Ship with clarity.</span></h1>
+          <p class="hero-description">
+            Explore the working CitrusCare SDK through a synthetic, end-to-end
+            example. See agent turns, tool results, governance events, and a
+            real local HTTP adapter request.
+          </p>
+          <div class="hero-actions">
+            <button class="run-button" id="run-demo" type="button">
+              <span class="play-icon" aria-hidden="true">▶</span>
+              <span id="run-label">Run the integration demo</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <span class="runtime-note"><span class="pulse"></span>Runs on this machine</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="orbit orbit-three"></div>
+          <div class="art-core"><span class="core-leaf">✳</span></div>
+          <span class="orbit-label label-agent">AGENT</span>
+          <span class="orbit-label label-tools">TOOLS</span>
+          <span class="orbit-label label-audit">AUDIT</span>
+          <span class="orbit-label label-consent">CONSENT</span>
+        </div>
+      </section>
+
+      <section class="safety-banner" aria-label="Demo safety notice">
+        <span class="safety-icon" aria-hidden="true">i</span>
+        <p><strong>Synthetic demo only.</strong> No patient data is collected or sent.
+          The protocol response is fixed text from a local fixture—not AI-generated content.</p>
+        <span class="safe-pill">NO API KEY</span>
+      </section>
+
+      <section class="section-heading">
+        <div>
+          <p class="eyebrow">SDK CAPABILITIES</p>
+          <h2>One run. The working pieces.</h2>
+        </div>
+        <span class="version-pill" id="sdk-version">SDK v—</span>
+      </section>
+
+      <section class="capability-grid" aria-label="Implemented SDK capabilities">
+        <article class="capability-card">
+          <div class="card-icon icon-agent" aria-hidden="true">↗</div>
+          <p class="card-kicker">01 / RUNTIME</p>
+          <h3>Agent orchestration</h3>
+          <p>Bounded async loop, messages, results, and deterministic scripted turns.</p>
+          <span class="card-state"><span></span>WORKING</span>
+        </article>
+        <article class="capability-card">
+          <div class="card-icon icon-tools" aria-hidden="true">{ }</div>
+          <p class="card-kicker">02 / EXTENSIBILITY</p>
+          <h3>Typed tools</h3>
+          <p>Validated JSON arguments with both synchronous and asynchronous handlers.</p>
+          <span class="card-state"><span></span>WORKING</span>
+        </article>
+        <article class="capability-card">
+          <div class="card-icon icon-governance" aria-hidden="true">◎</div>
+          <p class="card-kicker">03 / GOVERNANCE</p>
+          <h3>Consent &amp; audit</h3>
+          <p>Process-local consent lifecycle and metadata-only in-memory audit events.</p>
+          <span class="card-state"><span></span>EXAMPLE PRIMITIVES</span>
+        </article>
+        <article class="capability-card">
+          <div class="card-icon icon-provider" aria-hidden="true">⇄</div>
+          <p class="card-kicker">04 / CONNECTIVITY</p>
+          <h3>HTTP provider adapter</h3>
+          <p>Real standard-library HTTP transport verified against a local protocol fixture.</p>
+          <span class="card-state"><span></span>NO MODEL CALL</span>
+        </article>
+      </section>
+
+      <section class="output-section" id="output-section" aria-live="polite">
+        <div class="output-heading">
+          <div>
+            <p class="eyebrow">LIVE EXECUTION</p>
+            <h2>Run output</h2>
+          </div>
+          <span class="run-state" id="run-state">READY</span>
+        </div>
+        <div class="output-empty" id="output-empty">
+          <span class="empty-glyph" aria-hidden="true">⌘</span>
+          <p>Your demo output will appear here.</p>
+          <span>Everything runs locally with synthetic values.</span>
+        </div>
+        <div class="output-content" id="output-content" hidden>
+          <div class="result-highlights" id="result-highlights"></div>
+          <details class="json-details">
+            <summary>Inspect complete SDK response <span>JSON</span></summary>
+            <pre id="result-json"></pre>
+          </details>
+        </div>
+        <div class="output-error" id="output-error" role="alert" hidden></div>
+      </section>
+
+      <section class="next-section">
+        <div class="next-copy">
+          <p class="eyebrow">START BUILDING</p>
+          <h2>Your app. Your integration.</h2>
+          <p>Install the local Python package, import the public API, and build a consumer application around explicit SDK capabilities.</p>
+        </div>
+        <div class="command-card">
+          <div class="command-top"><span>POWERSHELL</span><button id="copy-command" type="button">COPY</button></div>
+          <code>python -m pip install -e C:\Users\abhis\CitrusCare\citruscare-sdk</code>
+          <span class="command-foot">Python 3.11+ · No runtime dependencies</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>CitrusCare <span class="brand-light">SDK</span></span>
+      </a>
+      <span>Independent SDK · Alpha software · Not clinical advice</span>
+      <a href="https://github.com/Abhishek232p/citruscare-sdk" rel="noreferrer">View source ↗</a>
+    </footer>
+  </body>
+</html>

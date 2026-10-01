@@ -28,7 +28,8 @@ python -m venv .venv
 ```
 
 See [the consumer guide](../examples/integration_demo/README.md) for output
-interpretation and installation commands for other applications.
+interpretation, commands to launch the local browser playground, and
+installation commands for other applications.
 
 ## Checks
 
